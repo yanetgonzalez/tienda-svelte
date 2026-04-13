@@ -399,7 +399,6 @@ li button {
   <button on:click={()=>filtroMarca="Puma"}>Puma</button>
   <button on:click={()=>filtroMarca="New Balance"}>NB</button>
 </div>
-{/if}
 <!-- PRODUCTOS -->
 
 <input placeholder="Buscar tenis..." bind:value={busqueda}>
@@ -423,6 +422,8 @@ li button {
 
   </div>
 {/each}
+</div>
+{/if}
 
 <!-- FAVORITOS -->
 {#if vista==="favoritos"}
