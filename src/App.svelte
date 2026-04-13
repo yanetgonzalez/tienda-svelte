@@ -6,7 +6,7 @@ let filtroMarca = "Todos";
 let mensaje = "";
 
 let vista = "inicio";
-let usuario = "Admin";
+let usuario = null;
 
 let productos = [];
 let carrito = [];
@@ -68,14 +68,6 @@ function toggleFavorito(p) {
   }
 }
 
-function login() {
-  if (correo && password) {
-    usuario = correo;
-    vista = "inicio";
-    alert("Bienvenido 🔐");
-  }
-}
-
 function registrar() {
   alert("Usuario registrado ✅");
   vista = "login";
@@ -103,6 +95,13 @@ function pagar() {
 function eliminar(index) {
   carrito.splice(index, 1);
   carrito = [...carrito];
+}
+function login() {
+  if (correo && password) {
+    usuario = correo;
+    vista = "inicio";
+    alert("Bienvenido 🔐");
+  }
 }
 
 $: total = carrito.reduce((s,p)=>s+p.precio,0);
@@ -348,16 +347,19 @@ li button {
 <main>
 
 <!-- NAV -->
-{#if usuario}
-<nav>
+ <nav>
   <button on:click={()=>vista="inicio"}>Inicio</button>
   <button on:click={()=>vista="productos"}>Productos</button>
   <button on:click={()=>vista="favoritos"}>Favoritos</button>
   <button on:click={()=>vista="carrito"}>Carrito</button>
   <button on:click={()=>vista="contacto"}>Contacto</button>
-  <button on:click={logout}>Salir</button>
+
+  {#if usuario}
+    <button on:click={logout}>Cerrar sesión</button>
+  {:else}
+    <button on:click={()=>vista="login"}>Iniciar sesión</button>
+  {/if}
 </nav>
-{/if}
 
 <!-- LOGIN -->
 {#if !usuario && vista==="login"}
