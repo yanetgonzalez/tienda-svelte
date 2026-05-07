@@ -2,13 +2,14 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
 let carrito = [];
 let usuarios = [];
 
-const productos = [
+let productos = [
   { id: 1, nombre: "Nike Air Max", precio: 2500, imagen: "nike1.jpg" },
   { id: 2, nombre: "Nike Jordan", precio: 3200, imagen: "nike2.jpg" },
   { id: 3, nombre: "Nike Revolution", precio: 1800, imagen: "nike3.jpg" },
@@ -21,11 +22,19 @@ const productos = [
   { id: 10, nombre: "Nike ZoomX", precio: 3500, imagen: "nike4.jpg" }
 ];
 
+// =======================
 // PRODUCTOS
-app.get('/productos', (req, res) => res.json(productos));
+// =======================
+app.get('/productos', (req, res) => {
+  res.json(productos);
+});
 
+// =======================
 // CARRITO
-app.get('/carrito', (req, res) => res.json(carrito));
+// =======================
+app.get('/carrito', (req, res) => {
+  res.json(carrito);
+});
 
 app.post('/carrito', (req, res) => {
   carrito.push(req.body);
@@ -37,29 +46,76 @@ app.delete('/carrito', (req, res) => {
   res.send("Carrito vacío");
 });
 
+// =======================
 // REGISTRO
+// =======================
 app.post('/registro', (req, res) => {
   usuarios.push(req.body);
   res.send("Usuario registrado");
 });
 
-// ADMIN (agregar producto)
+// =======================
+// LOGIN
+app.post('/login', (req, res) => {
+  const { correo, password } = req.body;
+
+  // ADMIN
+  if (correo === "admin@nike.com" && password === "1234") {
+    return res.json({ rol: "admin" });
+  }
+
+  // USUARIO NORMAL
+  if (correo && password) {
+    return res.json({ rol: "usuario" });
+  }
+
+  res.status(401).send("Datos incorrectos");
+});
+
+// =======================
+// AGREGAR PRODUCTO
+// =======================
 app.post('/productos', (req, res) => {
   productos.push(req.body);
   res.send("Producto agregado");
 });
+
+// =======================
+// ELIMINAR PRODUCTO
+// =======================
+app.delete('/productos/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+
+  productos = productos.filter(p => p.id !== id);
+
+  res.send("Producto eliminado");
+});
+
+// =======================
+// EDITAR PRODUCTO
+// =======================
+app.put('/productos/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+
+  const index = productos.findIndex(p => p.id === id);
+
+  if (index !== -1) {
+    productos[index] = req.body;
+  }
+
+  res.send("Producto actualizado");
+});
+
+// =======================
+// RUTA PRINCIPAL
+// =======================
 app.get('/', (req, res) => {
   res.send('Servidor funcionando 🚀');
 });
 
-app.listen(3000, () => console.log("Servidor en http://localhost:3000"));
-
-async function eliminar(index) {
-  carrito.splice(index, 1);
-
-  await fetch('http://localhost:3000/carrito', {
-    method: "DELETE"
-  });
-
-  carrito = [];
-}
+// =======================
+// SERVIDOR
+// =======================
+app.listen(3000, () => {
+  console.log("Servidor en http://localhost:3000");
+});

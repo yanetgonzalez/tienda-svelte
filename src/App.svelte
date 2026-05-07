@@ -29,36 +29,90 @@ let mostrarPago = false;
 let nombreTarjeta = "";
 let numTarjeta = "";
 let cvv = "";
+let rol = null; // "admin" o "usuario"
+let nuevoNombre = "";
+let nuevoPrecio = "";
+let nuevaImagen = "";
+
+async function agregarProducto() {
+  let nuevo = {
+    id: Date.now(),
+    nombre: nuevoNombre,
+    precio: parseInt(nuevoPrecio),
+    imagen: nuevaImagen
+  };
+
+  await fetch('http://localhost:3000/productos', {
+    method: "POST",
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(nuevo)
+  });
+
+  alert("Producto agregado ✅");
+
+    nuevoNombre = "";
+  nuevoPrecio = "";
+  nuevaImagen = "";
+  cargarProductos();
+}
 
 
 // CARGAR DATOS
 onMount(async () => {
-  let res1 = await fetch('http://localhost:3000/productos');
-  productos = await res1.json();
+  await cargarProductos();
 
   let res2 = await fetch('http://localhost:3000/carrito');
   carrito = await res2.json();
 });
+async function cargarProductos() {
+  let res = await fetch('http://localhost:3000/productos');
+  productos = await res.json();
+}
 
 // FILTRO
 $: productosFiltrados = productos.filter(p =>
   p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
   (filtroMarca === "Todos" || p.nombre.toLowerCase().includes(filtroMarca.toLowerCase()))
 );
-// FUNCIONES
-async function agregar(p) {
-  let res = await fetch('http://localhost:3000/carrito', {
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(p)
+
+async function eliminarProducto(id) {
+  await fetch(`http://localhost:3000/productos/${id}`, {
+    method: "DELETE"
   });
-  carrito = await res.json();
 
-  mensaje = "Producto agregado 🛒";
+  cargarProductos();
+}
 
-  setTimeout(() => {
-    mensaje = "";
-  }, 2000);
+// LOGIN
+async function login() {
+  let res = await fetch('http://localhost:3000/login', {
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      correo,
+      password
+    })
+  });
+
+  if (res.ok) {
+    let data = await res.json();
+
+    rol = data.rol;
+    usuario = correo;
+
+    if (rol === "admin") {
+      vista = "admin";
+    } else {
+      vista = "inicio";
+    }
+
+    alert("Bienvenido " + rol.toUpperCase() + " 🔐");
+
+  } else {
+    alert("Datos incorrectos ❌");
+  }
 }
 function toggleFavorito(p) {
   if (favoritos.find(f => f.id === p.id)) {
@@ -96,13 +150,23 @@ function eliminar(index) {
   carrito.splice(index, 1);
   carrito = [...carrito];
 }
-function login() {
-  if (correo && password) {
-    usuario = correo;
-    vista = "inicio";
-    alert("Bienvenido 🔐");
-  }
+// FUNCIONES
+async function agregar(p) {
+  let res = await fetch('http://localhost:3000/carrito', {
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(p)
+  });
+
+  carrito = await res.json();
+
+  mensaje = "Producto agregado 🛒";
+
+  setTimeout(() => {
+    mensaje = "";
+  }, 2000);
 }
+
 
 $: total = carrito.reduce((s,p)=>s+p.precio,0);
 
@@ -335,6 +399,15 @@ li button {
   background: red;
   color: white;
 }
+.admin-panel{
+  background:white;
+  margin:20px;
+  padding:20px;
+  border-radius:15px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
@@ -360,6 +433,24 @@ li button {
     <button on:click={()=>vista="login"}>Iniciar sesión</button>
   {/if}
 </nav>
+{#if rol==="admin"}
+<h2 style="color:white; text-align:center;">
+  PANEL ADMIN 👑
+</h2>
+{/if}
+{#if rol === "admin"}
+<div class="admin-panel">
+  <h2>Panel Admin 👑</h2>
+
+  <input placeholder="Nombre producto" bind:value={nuevoNombre}>
+  <input placeholder="Precio" bind:value={nuevoPrecio}>
+  <input placeholder="Imagen ejemplo: nike1.jpg" bind:value={nuevaImagen}>
+
+  <button on:click={agregarProducto}>
+    Agregar producto
+  </button>
+</div>
+{/if}
 
 <!-- LOGIN -->
 {#if !usuario && vista==="login"}
@@ -401,6 +492,17 @@ li button {
   <button on:click={()=>filtroMarca="Puma"}>Puma</button>
   <button on:click={()=>filtroMarca="New Balance"}>NB</button>
 </div>
+{#if vista==="admin"}
+<h2>Panel Admin</h2>
+
+<input placeholder="Nombre" bind:value={nuevoNombre}>
+<input placeholder="Precio" bind:value={nuevoPrecio}>
+<input placeholder="Imagen (ej: nike1.jpg)" bind:value={nuevaImagen}>
+
+<button on:click={agregarProducto}>Agregar producto</button>
+{/if}
+
+
 <!-- PRODUCTOS -->
 
 <input placeholder="Buscar tenis..." bind:value={busqueda}>
@@ -421,6 +523,11 @@ li button {
     <button on:click={()=>{ agregar(p); vista="carrito"; }}>
       Comprar ahora
     </button>
+    {#if rol === "admin"}
+<button on:click={()=>eliminarProducto(p.id)}>
+  Eliminar ❌
+</button>
+{/if}
 
   </div>
 {/each}
