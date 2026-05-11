@@ -1,8 +1,8 @@
 <script>
 import { onMount } from "svelte";
 import { fade } from 'svelte/transition';
-let filtroMarca = "Todos";
 
+let filtroMarca = "Todos";
 let mensaje = "";
 
 let vista = "inicio";
@@ -29,11 +29,16 @@ let mostrarPago = false;
 let nombreTarjeta = "";
 let numTarjeta = "";
 let cvv = "";
-let rol = null; // "admin" o "usuario"
+
+// ADMIN
+let rol = null;
 let nuevoNombre = "";
 let nuevoPrecio = "";
 let nuevaImagen = "";
 
+// =======================
+// AGREGAR PRODUCTO
+// =======================
 async function agregarProducto() {
   let nuevo = {
     id: Date.now(),
@@ -42,50 +47,68 @@ async function agregarProducto() {
     imagen: nuevaImagen
   };
 
-  await fetch('http://localhost:3000/productos', {
+  await fetch('https://backend-nike.onrender.com/productos', {
     method: "POST",
-    headers: {'Content-Type':'application/json'},
+    headers: {
+      'Content-Type':'application/json'
+    },
     body: JSON.stringify(nuevo)
   });
 
   alert("Producto agregado ✅");
 
-    nuevoNombre = "";
+  nuevoNombre = "";
   nuevoPrecio = "";
   nuevaImagen = "";
+
   cargarProductos();
 }
 
-
+// =======================
 // CARGAR DATOS
+// =======================
 onMount(async () => {
   await cargarProductos();
 
-  let res2 = await fetch('http://localhost:3000/carrito');
+  let res2 = await fetch('https://backend-nike.onrender.com/carrito');
   carrito = await res2.json();
 });
+
+// =======================
+// CARGAR PRODUCTOS
+// =======================
 async function cargarProductos() {
-  let res = await fetch('http://localhost:3000/productos');
+  let res = await fetch('https://backend-nike.onrender.com/productos');
   productos = await res.json();
 }
 
+// =======================
 // FILTRO
+// =======================
 $: productosFiltrados = productos.filter(p =>
   p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-  (filtroMarca === "Todos" || p.nombre.toLowerCase().includes(filtroMarca.toLowerCase()))
+  (
+    filtroMarca === "Todos" ||
+    p.nombre.toLowerCase().includes(filtroMarca.toLowerCase())
+  )
 );
 
+// =======================
+// ELIMINAR PRODUCTO
+// =======================
 async function eliminarProducto(id) {
-  await fetch(`http://localhost:3000/productos/${id}`, {
+  await fetch(`https://backend-nike.onrender.com/productos/${id}`, {
     method: "DELETE"
   });
 
   cargarProductos();
 }
 
+// =======================
 // LOGIN
+// =======================
 async function login() {
-  let res = await fetch('http://localhost:3000/login', {
+  let res = await fetch('https://backend-nike.onrender.com/login', {
     method: "POST",
     headers: {
       'Content-Type': 'application/json'
@@ -114,6 +137,10 @@ async function login() {
     alert("Datos incorrectos ❌");
   }
 }
+
+// =======================
+// FAVORITOS
+// =======================
 function toggleFavorito(p) {
   if (favoritos.find(f => f.id === p.id)) {
     favoritos = favoritos.filter(f => f.id !== p.id);
@@ -122,18 +149,31 @@ function toggleFavorito(p) {
   }
 }
 
+// =======================
+// REGISTRO
+// =======================
 function registrar() {
   alert("Usuario registrado ✅");
   vista = "login";
 }
 
+// =======================
+// LOGOUT
+// =======================
 function logout() {
   usuario = null;
+  rol = null;
   vista = "login";
 }
 
+// =======================
+// PAGO
+// =======================
 function abrirPago() {
-  if (carrito.length === 0) return alert("Carrito vacío");
+  if (carrito.length === 0) {
+    return alert("Carrito vacío");
+  }
+
   mostrarPago = true;
 }
 
@@ -142,19 +182,30 @@ function pagar() {
     alert("Completa los datos");
     return;
   }
+
   alert("Pago exitoso 💳");
+
   carrito = [];
   mostrarPago = false;
 }
+
+// =======================
+// ELIMINAR DEL CARRITO
+// =======================
 function eliminar(index) {
   carrito.splice(index, 1);
   carrito = [...carrito];
 }
-// FUNCIONES
+
+// =======================
+// AGREGAR AL CARRITO
+// =======================
 async function agregar(p) {
-  let res = await fetch('http://localhost:3000/carrito', {
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
+  let res = await fetch('https://backend-nike.onrender.com/carrito', {
+    method: "POST",
+    headers: {
+      'Content-Type':'application/json'
+    },
     body: JSON.stringify(p)
   });
 
@@ -167,7 +218,9 @@ async function agregar(p) {
   }, 2000);
 }
 
-
+// =======================
+// TOTAL
+// =======================
 $: total = carrito.reduce((s,p)=>s+p.precio,0);
 
 </script>
