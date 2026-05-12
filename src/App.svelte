@@ -563,7 +563,10 @@ li button {
 <div class="grid">
 {#each productosFiltrados as p}
   <div class="card" in:fade={{ duration: 400 }}>
-    <img src={"/images/"+p.imagen}>
+  <img
+  src={`https://backend-nike.onrender.com/images/${p.imagen}`}
+  alt={p.nombre}
+/>
     <h3>{p.nombre}</h3>
     <p>${p.precio}</p>
 
