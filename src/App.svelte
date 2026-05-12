@@ -47,7 +47,7 @@ async function agregarProducto() {
     imagen: nuevaImagen
   };
 
-  await fetch('https://backend-nike.onrender.com/productos', {
+  await fetch('https://backend-nike-otu7.onrender.com/productos', {
     method: "POST",
     headers: {
       'Content-Type':'application/json'
@@ -70,7 +70,7 @@ async function agregarProducto() {
 onMount(async () => {
   await cargarProductos();
 
-  let res2 = await fetch('https://backend-nike.onrender.com/carrito');
+  let res2 = await fetch('https://backend-nike-otu7.onrender.com/carrito');
   carrito = await res2.json();
 });
 
@@ -78,7 +78,7 @@ onMount(async () => {
 // CARGAR PRODUCTOS
 // =======================
 async function cargarProductos() {
-  let res = await fetch('https://backend-nike.onrender.com/productos');
+  let res = await fetch('https://backend-nike-otu7.onrender.com/productos');
   productos = await res.json();
 }
 
@@ -97,7 +97,7 @@ $: productosFiltrados = productos.filter(p =>
 // ELIMINAR PRODUCTO
 // =======================
 async function eliminarProducto(id) {
-  await fetch(`https://backend-nike.onrender.com/productos/${id}`, {
+  await fetch(`https://backend-nike-otu7.onrender.com/productos/${id}`, {
     method: "DELETE"
   });
 
@@ -108,7 +108,7 @@ async function eliminarProducto(id) {
 // LOGIN
 // =======================
 async function login() {
-  let res = await fetch('https://backend-nike.onrender.com/login', {
+  let res = await fetch('https://backend-nike-otu7.onrender.com/login', {
     method: "POST",
     headers: {
       'Content-Type': 'application/json'
@@ -201,7 +201,7 @@ function eliminar(index) {
 // AGREGAR AL CARRITO
 // =======================
 async function agregar(p) {
-  let res = await fetch('https://backend-nike.onrender.com/carrito', {
+  let res = await fetch('https://backend-nike-otu7.onrender.com/carrito', {
     method: "POST",
     headers: {
       'Content-Type':'application/json'
@@ -564,7 +564,7 @@ li button {
 {#each productosFiltrados as p}
   <div class="card" in:fade={{ duration: 400 }}>
  <img 
-  src={`https://backend-nike.onrender.com/images/${p.imagen}`} 
+  src={`https://backend-nike-otu7.onrender.com/images/${p.imagen}`} 
   alt={p.nombre}
 />
     <h3>{p.nombre}</h3>
