@@ -126,10 +126,10 @@ async function login() {
     usuario = correo;
 
     if (rol === "admin") {
-      vista = "admin";
-    } else {
-      vista = "inicio";
-    }
+  vista = "productos";
+} else {
+  vista = "inicio";
+}
 
     alert("Bienvenido " + rol.toUpperCase() + " 🔐");
 
