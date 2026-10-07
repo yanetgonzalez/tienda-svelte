@@ -1,638 +1,231 @@
 <script>
-import { onMount } from "svelte";
-import { fade } from 'svelte/transition';
+  import { onMount } from "svelte";
+  import { fade } from 'svelte/transition';
 
-let filtroMarca = "Todos";
-let mensaje = "";
+  let filtroMarca = "Todos";
+  let mensaje = "";
 
-let vista = "inicio";
-let usuario = null;
+  let vista = "inicio";
+  let usuario = null;
 
-let productos = [];
-let carrito = [];
-let favoritos = [];
+  let productos = [];
+  let carrito = [];
+  let favoritos = [];
 
-let busqueda = "";
-let productosFiltrados = [];
+  let busqueda = "";
+  let productosFiltrados = [];
 
-// LOGIN
-let correo = "";
-let password = "";
+  // LOGIN
+  let correo = "";
+  let password = "";
+  let rolSeleccionado = "cliente"; // 'cliente' o 'admin'
+  let mostrarModalLogin = false;
 
-// REGISTRO
-let nombre = "";
-let nuevoCorreo = "";
-let nuevaPass = "";
+  // REGISTRO / PANEL
+  let nombre = "";
+  let nuevoCorreo = "";
 
-// PAGO
-let mostrarPago = false;
-let nombreTarjeta = "";
-let numTarjeta = "";
-let cvv = "";
+  // PRODUCTOS INICIALES
+  const productosBase = [
+    { id: 1, nombre: "Nike Air Max", precio: 2500, imagen: "nike1.jpg", marca: "Nike" },
+    { id: 2, nombre: "Nike Jordan", precio: 3200, imagen: "nike2.jpg", marca: "Nike" },
+    { id: 3, nombre: "Nike Revolution", precio: 1900, imagen: "nike4.jpeg", marca: "Nike" },
+    { id: 4, nombre: "Adidas Run", precio: 2100, imagen: "adidas1.jpg", marca: "Adidas" },
+    { id: 5, nombre: "Puma Sport", precio: 1900, imagen: "puma.jpg", marca: "Puma" },
+    { id: 6, nombre: "Reebok Sport", precio: 1800, imagen: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500", marca: "Reebok" },
+    { id: 7, nombre: "New Balance 574", precio: 2600, imagen: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500", marca: "New Balance" }
+  ];
 
-// ADMIN
-let rol = null;
-let nuevoNombre = "";
-let nuevoPrecio = "";
-let nuevaImagen = "";
+  onMount(() => {
+    // Cargar datos de localStorage
+    const pGuardados = localStorage.getItem("productos");
+    productos = pGuardados ? JSON.parse(pGuardados) : productosBase;
 
-// =======================
-// AGREGAR PRODUCTO
-// =======================
-async function agregarProducto() {
-  let nuevo = {
-    id: Date.now(),
-    nombre: nuevoNombre,
-    precio: parseInt(nuevoPrecio),
-    imagen: nuevaImagen
-  };
+    const cGuardado = localStorage.getItem("carrito");
+    if (cGuardado) carrito = JSON.parse(cGuardado);
 
-  await fetch('https://backend-nike-otu7.onrender.com/productos', {
-    method: "POST",
-    headers: {
-      'Content-Type':'application/json'
-    },
-    body: JSON.stringify(nuevo)
+    const uGuardado = localStorage.getItem("usuario");
+    if (uGuardado) usuario = JSON.parse(uGuardado);
+
+    filtrarProductos();
   });
 
-  alert("Producto agregado ✅");
-
-  nuevoNombre = "";
-  nuevoPrecio = "";
-  nuevaImagen = "";
-
-  cargarProductos();
-}
-
-// =======================
-// CARGAR DATOS
-// =======================
-onMount(async () => {
-  await cargarProductos();
-
-  let res2 = await fetch('https://backend-nike-otu7.onrender.com/carrito');
-  carrito = await res2.json();
-});
-
-// =======================
-// CARGAR PRODUCTOS
-// =======================
-async function cargarProductos() {
-  let res = await fetch('https://backend-nike-otu7.onrender.com/productos');
-  productos = await res.json();
-}
-
-// =======================
-// FILTRO
-// =======================
-$: productosFiltrados = productos.filter(p =>
-  p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-  (
-    filtroMarca === "Todos" ||
-    p.nombre.toLowerCase().includes(filtroMarca.toLowerCase())
-  )
-);
-
-// =======================
-// ELIMINAR PRODUCTO
-// =======================
-async function eliminarProducto(id) {
-  await fetch(`https://backend-nike-otu7.onrender.com/productos/${id}`, {
-    method: "DELETE"
-  });
-
-  cargarProductos();
-}
-
-// =======================
-// LOGIN
-// =======================
-async function login() {
-  let res = await fetch('https://backend-nike-otu7.onrender.com/login', {
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      correo,
-      password
-    })
-  });
-
-  if (res.ok) {
-    let data = await res.json();
-
-    rol = data.rol;
-    usuario = correo;
-
-    if (rol === "admin") {
-  vista = "productos";
-} else {
-  vista = "inicio";
-}
-
-    alert("Bienvenido " + rol.toUpperCase() + " 🔐");
-
-  } else {
-    alert("Datos incorrectos ❌");
-  }
-}
-
-// =======================
-// FAVORITOS
-// =======================
-function toggleFavorito(p) {
-  if (favoritos.find(f => f.id === p.id)) {
-    favoritos = favoritos.filter(f => f.id !== p.id);
-  } else {
-    favoritos = [...favoritos, p];
-  }
-}
-
-// =======================
-// REGISTRO
-// =======================
-function registrar() {
-  alert("Usuario registrado ✅");
-  vista = "login";
-}
-
-// =======================
-// LOGOUT
-// =======================
-function logout() {
-  usuario = null;
-  rol = null;
-  vista = "login";
-}
-
-// =======================
-// PAGO
-// =======================
-function abrirPago() {
-  if (carrito.length === 0) {
-    return alert("Carrito vacío");
+  function seleccionarRol(rol) {
+    rolSeleccionado = rol;
+    if (rol === 'admin') {
+      correo = "admin@sneakers.com";
+      password = "admin123";
+    } else {
+      correo = "cliente@correo.com";
+      password = "123456";
+    }
   }
 
-  mostrarPago = true;
-}
-
-function pagar() {
-  if (!nombreTarjeta || !numTarjeta || !cvv) {
-    alert("Completa los datos");
-    return;
+  function abrirLogin() {
+    mostrarModalLogin = true;
+    seleccionarRol(rolSeleccionado);
   }
 
-  alert("Pago exitoso 💳");
+  function cerrarLogin() {
+    mostrarModalLogin = false;
+  }
 
-  carrito = [];
-  mostrarPago = false;
-}
+  function ejecutarLogin() {
+    if (!correo) {
+      alert("Por favor ingresa un correo.");
+      return;
+    }
 
-// =======================
-// ELIMINAR DEL CARRITO
-// =======================
-function eliminar(index) {
-  carrito.splice(index, 1);
-  carrito = [...carrito];
-}
+    if (rolSeleccionado === 'admin') {
+      if (correo !== "admin@sneakers.com" || password !== "admin123") {
+        alert("Credenciales de Administrador incorrectas.\nCorreo: admin@sneakers.com\nPassword: admin123");
+        return;
+      }
+      usuario = { correo, rol: "admin" };
+    } else {
+      usuario = { correo, rol: "cliente" };
+    }
 
-// =======================
-// AGREGAR AL CARRITO
-// =======================
-async function agregar(p) {
-  let res = await fetch('https://backend-nike-otu7.onrender.com/carrito', {
-    method: "POST",
-    headers: {
-      'Content-Type':'application/json'
-    },
-    body: JSON.stringify(p)
-  });
+    localStorage.setItem("usuario", JSON.stringify(usuario));
+    cerrarLogin();
+    mostrarNotificacion(`¡Bienvenido ${usuario.rol === 'admin' ? 'Administrador' : 'Cliente'}! 🔐`);
 
-  carrito = await res.json();
+    if (usuario.rol === 'admin') {
+      vista = 'adminPanel';
+    }
+  }
 
-  mensaje = "Producto agregado 🛒";
+  function logout() {
+    usuario = null;
+    localStorage.removeItem("usuario");
+    vista = "inicio";
+    mostrarNotificacion("Sesión cerrada");
+  }
 
-  setTimeout(() => {
-    mensaje = "";
-  }, 2000);
-}
+  function filtrarProductos() {
+    productosFiltrados = productos.filter(p => {
+      const coincideNombre = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      const coincideMarca = filtroMarca === "Todos" || p.marca === filtroMarca;
+      return coincideNombre && coincideMarca;
+    });
+  }
 
-// =======================
-// TOTAL
-// =======================
-$: total = carrito.reduce((s,p)=>s+p.precio,0);
+  $: busqueda, filtroMarca, filtrarProductos();
 
+  function agregarAlCarrito(prod) {
+    carrito = [...carrito, prod];
+    localStorage.setItem("carrito", JSON.stringify(carrito));
+    mostrarNotificacion("Producto agregado al carrito 🛒");
+  }
+
+  function mostrarNotificacion(txt) {
+    mensaje = txt;
+    setTimeout(() => { mensaje = ""; }, 2500);
+  }
 </script>
 
-<style>
-:global(body) {
-  margin: 0;
-  font-family: Arial;
-  background: url('/images/fondo.jpg') center/cover no-repeat fixed;
-}
-/* CONTENEDOR PRINCIPAL */
-main {
-  max-width: 1200px;
-  margin: auto;
-  background: rgba(255, 255, 255, 0.2); /* transparente */
-  backdrop-filter: blur(8px);
-  border-radius: 15px;
-  overflow: hidden;
-}
-/* HEADER */
-header {
-  background: #111;
-  color: white;
-  padding: 15px;
-  text-align: center;
-  font-size: 24px;
-  letter-spacing: 2px;
-}
+<!-- NAVEGACIÓN -->
+<header>
+  <div class="logo">
+    <i class="fa-solid fa-shoe-prints"></i> SNEAKERS <span>STORE</span>
+  </div>
+  <nav>
+    <button class:active={vista === 'inicio'} on:click={() => vista = 'inicio'}>Inicio</button>
+    <button class:active={vista === 'productos'} on:click={() => vista = 'productos'}>Productos</button>
+    <button class:active={vista === 'carrito'} on:click={() => vista = 'carrito'}>Carrito ({carrito.length})</button>
 
-/* NAV */
-nav {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  background: #222;
-  padding: 10px;
-}
+    {#if usuario && usuario.rol === 'admin'}
+      <button class="btn-admin" class:active={vista === 'adminPanel'} on:click={() => vista = 'adminPanel'}>Panel Admin</button>
+    {/if}
 
-nav button {
-  padding: 10px 15px;
-  border: none;
-  background: #ff3c00;
-  color: white;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: 0.3s;
-}
-
-nav button:hover {
-  background: #ff5c2a;
-}
-
-/* HERO */
-.hero {
-  height: 400px;
-  background: url('/images/nike.jpg') center/cover;
-  position: relative;
-  border-radius: 15px;
-}
-
-.overlay {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  background: rgba(0,0,0,0.5);
-}
-
-.overlay h1 {
-  font-size: 40px;
-}
-
-.overlay button {
-  padding: 12px 20px;
-  background: #ff3c00;
-  border: none;
-  color: white;
-  cursor: pointer;
-  margin-top: 10px;
-  border-radius: 5px;
-}
-
-/* GRID PRODUCTOS */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
-  gap: 20px;
-  padding: 20px;
-}
-
-/* CARD */
-.card {
-  background: white;
-  border-radius: 15px;
-  padding: 15px;
-  text-align: center;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  transition: 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-
-.card:hover {
-  transform: translateY(-10px) scale(1.05);
-}
-.card img {
-  transition: 0.3s;
-}
-
-.card:hover img {
-  transform: scale(1.2);
-}
-
-/* IMAGEN */
-img {
-  width: 150px;
-  height: 150px;
-  object-fit: contain;
-}
-
-/* BOTONES */
-button {
-  margin-top: 5px;
-  padding: 8px;
-  border: none;
-  cursor: pointer;
-  border-radius: 20px;
-  background: #111;
-  color: white;
-}
-
-button:hover {
-  background: #ff3c00;
-}
-/* CARRITO */
-.carrito {
-  background: white;
-  margin: 20px;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-.pagar {
-  background: #28a745;
-  color: white;
-}
-
-.vaciar {
-  background: red;
-  color: white;
-}
-
-/* MODAL */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-}
-
-input {
-  width: 100%;
-  margin: 5px 0;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-.filtros {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-}
-
-.filtros button {
-  background: #111;
-  color: white;
-}
-
-.filtros button:hover {
-  background: #ff3c00;
-}
-.filtros button.activo {
-  background: #ff3c00;
-}
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: #111;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  animation: fadeIn 0.3s;
-}
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  background: white;
-  margin: 10px;
-  padding: 15px;
-  border-radius: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-li button {
-  background: red;
-  color: white;
-}
-.admin-panel{
-  background:white;
-  margin:20px;
-  padding:20px;
-  border-radius:15px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; }
-}
-</style>
-
-<header>NIKE STORE 👟</header>
+    {#if usuario}
+      <span class="user-info">{usuario.correo}</span>
+      <button class="btn-salir" on:click={logout}>Salir</button>
+    {:else}
+      <button class="btn-login" on:click={abrirLogin}>Iniciar sesión</button>
+    {/if}
+  </nav>
+</header>
 
 <main>
-
-<!-- NAV -->
- <nav>
-  <button on:click={()=>vista="inicio"}>Inicio</button>
-  <button on:click={()=>vista="productos"}>Productos</button>
-  <button on:click={()=>vista="favoritos"}>Favoritos</button>
-  <button on:click={()=>vista="carrito"}>Carrito</button>
-  <button on:click={()=>vista="contacto"}>Contacto</button>
-
-  {#if usuario}
-    <button on:click={logout}>Cerrar sesión</button>
-  {:else}
-    <button on:click={()=>vista="login"}>Iniciar sesión</button>
+  {#if mensaje}
+    <div class="toast" transition:fade>{mensaje}</div>
   {/if}
-</nav>
-{#if rol==="admin"}
-<h2 style="color:white; text-align:center;">
-  PANEL ADMIN 👑
-</h2>
-{/if}
-{#if rol === "admin"}
-<div class="admin-panel">
-  <h2>Panel Admin 👑</h2>
 
-  <input placeholder="Nombre producto" bind:value={nuevoNombre}>
-  <input placeholder="Precio" bind:value={nuevoPrecio}>
-  <input placeholder="Imagen ejemplo: nike1.jpg" bind:value={nuevaImagen}>
+  {#if vista === 'inicio'}
+    <section class="hero">
+      <h1>ELEVANDO TU ESTILO URBANO</h1>
+      <p>Consigue los tenis más exclusivos.</p>
+      <button class="btn-primary" on:click={() => vista = 'productos'}>Ver Catálogo</button>
+    </section>
+  {:else if vista === 'productos'}
+    <section class="container">
+      <h2>Catálogo de Productos</h2>
+      <input type="text" bind:value={busqueda} placeholder="Buscar tenis..." class="input-search">
 
-  <button on:click={agregarProducto}>
-    Agregar producto
-  </button>
-</div>
-{/if}
-
-<!-- LOGIN -->
-{#if !usuario && vista==="login"}
-<h2>Login</h2>
-<input placeholder="Correo" bind:value={correo}>
-<input placeholder="Contraseña" type="password" bind:value={password}>
-<button on:click={login}>Entrar</button>
-<button on:click={()=>vista="registro"}>Registrarse</button>
-{/if}
-
-{#if mensaje}
-<div class="toast">{mensaje}</div>
-{/if}
-
-<!-- REGISTRO -->
-{#if vista==="registro"}
-<h2>Registro</h2>
-<input placeholder="Nombre" bind:value={nombre}>
-<input placeholder="Correo" bind:value={nuevoCorreo}>
-<input placeholder="Contraseña" bind:value={nuevaPass}>
-<button on:click={registrar}>Crear cuenta</button>
-{/if}
-
-<!-- INICIO -->
-{#if vista==="inicio"}
-<div class="hero">
-  <div class="overlay">
-    <h1>NUEVA COLECCIÓN</h1>
-    <button on:click={()=>vista="productos"}>Comprar ahora</button>
-  </div>
-</div>
-{/if}
-
-{#if vista==="productos"}
-<div class="filtros">
-  <button on:click={()=>filtroMarca="Todos"}>Todos</button>
-  <button on:click={()=>filtroMarca="Nike"}>Nike</button>
-  <button on:click={()=>filtroMarca="Adidas"}>Adidas</button>
-  <button on:click={()=>filtroMarca="Puma"}>Puma</button>
-  <button on:click={()=>filtroMarca="New Balance"}>NB</button>
-</div>
-{#if vista==="admin"}
-<h2>Panel Admin</h2>
-
-<input placeholder="Nombre" bind:value={nuevoNombre}>
-<input placeholder="Precio" bind:value={nuevoPrecio}>
-<input placeholder="Imagen (ej: nike1.jpg)" bind:value={nuevaImagen}>
-
-<button on:click={agregarProducto}>Agregar producto</button>
-{/if}
-
-
-<!-- PRODUCTOS -->
-
-<input placeholder="Buscar tenis..." bind:value={busqueda}>
-
-<div class="grid">
-{#each productosFiltrados as p}
-  <div class="card" in:fade={{ duration: 400 }}>
- <img 
-  src={`https://backend-nike-otu7.onrender.com/images/${p.imagen}`} 
-  alt={p.nombre}
-/>
-    <h3>{p.nombre}</h3>
-    <p>${p.precio}</p>
-
-    <button on:click={()=>agregar(p)}>Agregar</button>
-
-    <button on:click={()=>toggleFavorito(p)}>
-      {favoritos.find(f=>f.id===p.id) ? "❤️" : "🤍"}
-    </button>
-
-    <button on:click={()=>{ agregar(p); vista="carrito"; }}>
-      Comprar ahora
-    </button>
-    {#if rol === "admin"}
-<button on:click={()=>eliminarProducto(p.id)}>
-  Eliminar ❌
-</button>
-{/if}
-
-  </div>
-{/each}
-</div>
-{/if}
-
-<!-- FAVORITOS -->
-{#if vista==="favoritos"}
-<h2>Favoritos ❤️</h2>
-{#each favoritos as f}
-<p>{f.nombre}</p>
-{/each}
-{/if}
-
-<!-- CARRITO -->
-{#if vista==="carrito"}
-<h2>Carrito</h2>
-
-<ul>
-{#each carrito as c, i}
-<li>
-  {c.nombre} - ${c.precio}
-  <button on:click={()=>eliminar(i)}>❌</button>
-</li>
-{/each}
-</ul>
-
-<h3>Total: ${total}</h3>
-<button on:click={abrirPago}>Pagar</button>
-{/if}
-
-<!-- CONTACTO -->
-{#if vista==="contacto"}
-<h2>Contacto</h2>
-<p>nike@store.com</p>
-{/if}
-
+      <div class="grid">
+        {#each productosFiltrados as item}
+          <div class="card">
+            <img src={item.imagen} alt={item.nombre} />
+            <h3>{item.nombre}</h3>
+            <p>${item.precio} MXN</p>
+            <button on:click={() => agregarAlCarrito(item)}>Agregar al carrito</button>
+          </div>
+        {/each}
+      </div>
+    </section>
+  {:else if vista === 'adminPanel'}
+    <section class="container">
+      <h2>Panel de Administrador</h2>
+      <p>Bienvenido al control de la tienda.</p>
+    </section>
+  {/if}
 </main>
 
-<!-- MODAL (FUERA DEL MAIN) -->
-{#if mostrarPago}
-<div class="modal">
-  <div class="modal-content">
-    <h2>Pago</h2>
-    <input placeholder="Nombre tarjeta" bind:value={nombreTarjeta}>
-    <input placeholder="Número tarjeta" bind:value={numTarjeta}>
-    <input placeholder="CVV" bind:value={cvv}>
-    <button on:click={pagar}>Confirmar</button>
-    <button on:click={()=>mostrarPago=false}>Cancelar</button>
+<!-- MODAL LOGIN SVELTE -->
+{#if mostrarModalLogin}
+  <div class="modal-backdrop">
+    <div class="modal-content">
+      <button class="close-btn" on:click={cerrarLogin}>&times;</button>
+      <h2>Iniciar Sesión</h2>
+
+      <div class="role-selector">
+        <button class:active={rolSeleccionado === 'cliente'} on:click={() => seleccionarRol('cliente')}>Cliente</button>
+        <button class:active={rolSeleccionado === 'admin'} on:click={() => seleccionarRol('admin')}>Administrador</button>
+      </div>
+
+      <div class="form-group">
+        <label for="inputCorreo">Correo electrónico</label>
+        <input id="inputCorreo" type="email" bind:value={correo} placeholder="ejemplo@correo.com">
+      </div>
+
+      <div class="form-group">
+        <label for="inputPass">Contraseña</label>
+        <input id="inputPass" type="password" bind:value={password} placeholder="••••••••">
+      </div>
+
+      <button type="button" class="btn-primary" on:click={ejecutarLogin}>Ingresar al sistema</button>
+    </div>
   </div>
-</div>
 {/if}
+
+<style>
+  /* Estilos globales básicos */
+  header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background: #111; color: white; }
+  nav button { background: transparent; border: none; color: white; margin: 0 5px; cursor: pointer; padding: 8px 12px; }
+  nav button.active { background: #ff5722; border-radius: 5px; }
+  .btn-login { background: #ff5722 !important; border-radius: 5px; }
+  .modal-backdrop { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; }
+  .modal-content { background: white; padding: 2rem; border-radius: 10px; width: 350px; color: #333; position: relative; }
+  .close-btn { position: absolute; top: 10px; right: 15px; border:none; background:none; font-size: 1.5rem; cursor:pointer; }
+  .role-selector { display: flex; gap: 10px; margin-bottom: 1rem; }
+  .role-selector button { flex: 1; padding: 8px; border: 1px solid #ccc; background: #f0f0f0; cursor: pointer; }
+  .role-selector button.active { background: #ff5722; color: white; border-color: #ff5722; }
+  .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+  .form-group input { padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
+  .btn-primary { width: 100%; padding: 10px; background: #ff5722; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+  .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
+  .card img { width: 100%; height: 150px; object-fit: contain; }
+</style>
